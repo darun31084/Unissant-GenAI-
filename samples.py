@@ -1,0 +1,156 @@
+# samples.py  --  20 fake cases with planted errors + an answer key, so we can SCORE the tool.
+# Run:  python samples.py
+
+import checker
+
+SAMPLES = [
+ {"id": "S1_clean", "facts": {},
+  "narrative": "On March 14, 2025, Border Patrol agents encountered 'John Doe' near the Yuma Station area. Subject is a citizen of Mexico. Subject stated he crossed on foot without inspection and has never had any documents allowing him to remain in the United States. Subject has no prior immigration history. Subject is inadmissible under section 212(a)(6)(A)(i) of the INA, in that he entered at a place not designated by the Attorney General and was not then admitted or paroled."},
+ {"id": "S2_missing_citizenship", "facts": {},
+  "narrative": "On March 14, 2025, agents apprehended 'Maria Lopez' near the Nogales checkpoint. Subject stated she crossed on foot without inspection and has no documents. She has no prior immigration history. Subject is inadmissible under section 212(a)(6)(A)(i) of the INA, in that she entered without being admitted or paroled."},
+ {"id": "S3_no_manner_of_entry", "facts": {},
+  "narrative": "On 05/02/2025 officers encountered 'Carlos Ruiz', a citizen of Honduras, near the Laredo port of entry. Subject stated he has no passport or visa. Subject has no prior immigration history. Subject is inadmissible under section 212(a)(7)(A)(i)(I) of the INA, in that he lacked a valid entry document."},
+ {"id": "S4_charge_mismatch", "facts": {},
+  "narrative": "On June 3, 2025, agents encountered 'Ana Torres', a citizen of Colombia, at the El Paso airport. Subject was inspected and admitted as a B-2 visitor and presented her passport and visa. Subject stated she stayed past her authorized period. Subject is inadmissible under section 212(a)(6)(A)(i) of the INA, in that she entered without inspection."},
+ {"id": "S5_prior_removal_conflict", "facts": {},
+  "narrative": "On July 9, 2025, agents encountered 'Jose Perez', a citizen of Guatemala, near the McAllen station. Subject stated he crossed the river without inspection and has papers from no one. Subject has no prior immigration history. Subject is inadmissible under Section 212(A)(9)(A)(I) of the INA in that he was previously ordered removed and entered without being admitted."},
+ {"id": "S6_multi_charge_incomplete", "facts": {},
+  "narrative": "INADMISSIBILITY: 'John Doe' a citizen of Mexico. He has never had any documents that would allow him to be, or remain, in the United States legally. 'John Doe' is inadmissible under section 212(a) (6) (A) (i) of the INA, in that he entered the United States at a place not designated by the Attorney General and was not then admitted or paroled after inspection by an immigration officer.\nINADMISSIBILITY: Subject is inadmissible under Section 212(A) (9) (A) (I) of the Immigration and Nationality Act, as amended, in that he was previously ordered removed and entered or attempted to enter without being admitted.\nREMOVABILITY: Subject is removable under Section 212 because he was found inadmissible as an arriving alien in proceedings under section 235(b)l of the Act."},
+ {"id": "S7_clean_overstay", "facts": {},
+  "narrative": "On August 21, 2025, ICE officers encountered 'Priya Nair', a citizen of India, near the Chicago field office. Subject stated she was admitted as an F-1 student and later stopped attending school. Subject presented her passport and visa. Subject has a prior visa history with no violations. Subject is removable under section 237(a)(1)(B) of the INA, in that she was admitted and remained in the United States in violation of her status."},
+ {"id": "S8_fraud_missing_date", "facts": {},
+  "narrative": "Officers encountered 'Luis Mora', a citizen of Ecuador, at the San Ysidro port of entry. Subject presented a counterfeit passport and stated that it was his own. Subject has no prior immigration history. Subject is inadmissible under section 212(a)(6)(C)(i) of the INA, in that he willfully misrepresented a material fact to gain entry."},
+ {"id": "S9_clean_fraud_with_disposition", "facts": {},
+  "narrative": "On September 2, 2025, CBP officers at the Hidalgo port of entry encountered 'Rafael Soto', a citizen of Mexico. Subject presented a counterfeit permit and stated that it was genuine. Subject has no prior immigration history. Subject is inadmissible under section 212(a)(6)(C)(i) of the INA, in that he willfully misrepresented a material fact to gain entry. Subject was processed for expedited removal and the case was reviewed by a supervisor."},
+ {"id": "S10_missing_place", "facts": {},
+  "narrative": "On October 11, 2025, agents apprehended 'Elena Vargas', a citizen of El Salvador. Subject stated she crossed on foot without inspection. Subject has no prior immigration history and no documents. Subject is inadmissible under section 212(a)(6)(A)(i) of the INA, in that she entered at a place not designated by the Attorney General."},
+ {"id": "S11_missing_statements", "facts": {},
+  "narrative": "On November 5, 2025, Border Patrol agents apprehended 'Tomas Rivera', a citizen of Mexico, near the Tucson station. Subject crossed on foot without inspection. Subject has no prior immigration history. Subject is inadmissible under section 212(a)(6)(A)(i) of the INA, in that he entered at a place not designated by the Attorney General and was not then admitted or paroled."},
+ {"id": "S12_documents_conflict", "facts": {},
+  "narrative": "On January 8, 2026, officers encountered 'Nadia Karim', a citizen of Jordan, at the Detroit airport. Subject stated she has no documents. Subject presented her passport and a visa to the inspecting officer. Subject has no prior immigration history. Subject is inadmissible under section 212(a)(7)(A)(i)(I) of the INA, in that she lacked a valid entry document."},
+ {"id": "S13_missing_history_and_name", "facts": {},
+  "narrative": "On February 19, 2026, agents apprehended a male subject, a citizen of Peru, near the Del Rio sector. Subject stated he entered without inspection at a place not designated by the Attorney General. Subject is inadmissible under section 212(a)(6)(A)(i) of the INA, in that he was not then admitted or paroled."},
+ {"id": "S14_no_citation", "facts": {},
+  "narrative": "On March 3, 2026, agents apprehended 'Omar Haddad', a citizen of Egypt, near the Laredo station. Subject stated he crossed the river without inspection. Subject has no prior immigration history. Subject has no documents."},
+ {"id": "S15_clean_prior_removal", "facts": {},
+  "narrative": "On April 17, 2026, agents apprehended 'Hector Salas', a citizen of Honduras, near the Brownsville, TX station. Subject stated he entered without inspection. Subject admitted he was previously removed from the United States in 2019. Records confirm he was ordered removed and deported. Subject is inadmissible under section 212(a)(9)(A) of the INA, in that he was previously removed and entered again. Subject was served with a notice of reinstatement."},
+ {"id": "S16_overstay_status_conflict", "facts": {},
+  "narrative": "On May 12, 2026, ICE officers encountered 'Wei Chen', a citizen of China, near the Los Angeles field office. Subject stated he entered without inspection in 2021 and has no documents. Subject has no prior immigration history. Subject is removable under section 237(a)(1)(B) of the INA, in that he was admitted and remained in violation of his status."},
+ {"id": "S17_multi_charge_clean", "facts": {},
+  "narrative": "On June 20, 2026, agents apprehended 'Pedro Ortiz', a citizen of Guatemala, near the Rio Grande station. Subject stated he crossed without inspection. Subject has no documents. Subject has no prior immigration history. Subject is inadmissible under section 212(a)(6)(A)(i) of the INA, in that he entered at a place not designated by the Attorney General. Subject is also inadmissible under section 212(a)(7)(A)(i)(I) of the INA, in that he lacked a valid entry document. Subject was detained and referred to a supervisor."},
+ {"id": "S18_missing_country_and_date", "facts": {},
+  "narrative": "Agents apprehended 'Lina Haddad' near the Calexico port of entry. Subject stated she presented a counterfeit card. Subject has no prior immigration history. Subject is inadmissible under section 212(a)(6)(C)(i) of the INA, in that she willfully misrepresented a material fact."},
+ {"id": "S19_all_caps_clean", "facts": {},
+  "narrative": "On 07/15/2026 Border Patrol agents located MARIO DIAZ, a citizen of Nicaragua, near the Eagle Pass checkpoint. Subject stated he crossed on foot without inspection and has no documents. Subject has no prior immigration history. Subject is inadmissible under 8 U.S.C. 1182(a)(6)(A)(i), in that he entered at a place not designated by the Attorney General. Subject was processed and a Form I-213 was prepared."},
+ {"id": "S20_fraud_no_document", "facts": {},
+  "narrative": "On August 30, 2026, officers encountered 'Sara Ali', a citizen of Somalia, at the Seattle airport. Subject stated she arrived on a flight and was admitted. Subject has no prior immigration history. Subject is inadmissible under section 212(a)(6)(C)(i) of the INA, in that she willfully misrepresented a material fact to gain entry."},
+]
+
+# Answer key: the (type, element) problems we planted in each case, and whether a human must review it.
+KEY = {
+ "S1_clean":                 {"planted": [], "human": False},
+ "S2_missing_citizenship":   {"planted": [("missing", "country_of_citizenship")], "human": False},
+ "S3_no_manner_of_entry":    {"planted": [("missing", "manner_of_entry")], "human": False},
+ "S4_charge_mismatch":       {"planted": [("citation_mismatch", "charge_citation"), ("inconsistent", "manner_of_entry")], "human": True},
+ "S5_prior_removal_conflict":{"planted": [("inconsistent", "immigration_history")], "human": False},
+ "S6_multi_charge_incomplete":{"planted": [("missing", "date_of_encounter"), ("missing", "place_of_encounter"), ("unclear", "charge_citation"), ("missing", "subject_statements")], "human": True},
+ "S7_clean_overstay":        {"planted": [], "human": False},
+ "S8_fraud_missing_date":    {"planted": [("missing", "date_of_encounter")], "human": False},
+ "S9_clean_fraud_with_disposition": {"planted": [], "human": False},
+ "S10_missing_place":        {"planted": [("missing", "place_of_encounter")], "human": False},
+ "S11_missing_statements":   {"planted": [("missing", "subject_statements"), ("missing", "documents")], "human": False},
+ "S12_documents_conflict":   {"planted": [("inconsistent", "documents")], "human": False},
+ "S13_missing_history_and_name": {"planted": [("missing", "subject_name"), ("missing", "immigration_history"), ("missing", "documents")], "human": False},
+ "S14_no_citation":          {"planted": [("citation_mismatch", "charge_citation")], "human": True},
+ "S15_clean_prior_removal":  {"planted": [("missing", "documents")], "human": False},
+ "S16_overstay_status_conflict": {"planted": [("citation_mismatch", "charge_citation"), ("inconsistent", "manner_of_entry")], "human": True},
+ "S17_multi_charge_clean":   {"planted": [], "human": True},
+ "S18_missing_country_and_date": {"planted": [("missing", "country_of_citizenship"), ("missing", "date_of_encounter")], "human": False},
+ "S19_all_caps_clean":       {"planted": [], "human": False},
+ "S20_fraud_no_document":    {"planted": [("missing", "documents"), ("citation_mismatch", "charge_citation")], "human": False},
+}
+
+
+#*****************************************************************************************************
+#   EXTRA HELD-OUT CASES: written AFTER the rules, with different wording, to test that the checker is not just memorizing the first 20.
+#*****************************************************************************************************
+EXTRA_SAMPLES = [
+ {"id": "E1_clean_unquoted_name", "facts": {},
+  "narrative": "On 2025-11-02, Border Patrol Agent Smith encountered Juan Perez-Gomez, a native and citizen of Mexico, approximately 3 miles north of the Lukeville port of entry. Perez-Gomez stated that he walked across the border outside a port of entry and has no immigration documents. Records checks show no previous removals or immigration history. Perez-Gomez is inadmissible under INA section 212(a)(6)(A)(i), as an alien present without admission or parole. He was transported to the station and processed."},
+ {"id": "E2_clean_residence_arrest", "facts": {},
+  "narrative": "On 03/09/2026, ICE ERO officers arrested Ms. Fatima Noor, a national of Somalia, at her residence in Columbus, Ohio. Ms. Noor stated she was admitted on a B-2 visa in 2022 and remained after it expired. She presented her passport, which showed the visa. Records show no prior removals. She is removable under section 237(a)(1)(B) of the INA as an alien who remained beyond the period authorized. She was served with a Notice to Appear (Form I-862) and released on her own recognizance."},
+ {"id": "E3_clean_altered_passport", "facts": {},
+  "narrative": "On 11/20/2025 at the Miami International Airport, CBP Officer Ruiz encountered Mr. Oleg Petrov, a citizen of Ukraine. Mr. Petrov presented a passport that examination showed had an altered photo page, and he stated that it was issued to him. Records checks show no prior immigration history. He arrived on an inbound flight from Frankfurt. Mr. Petrov is inadmissible under 212(a)(6)(C)(i) of the INA for willfully misrepresenting a material fact."},
+ {"id": "E4_missing_citizenship", "facts": {},
+  "narrative": "On 12/01/2025, agents apprehended 'Rosa Medina' near the Douglas station. Subject stated she crossed on foot without inspection and carries no documents. Records show no prior removals. Subject is inadmissible under section 212(a)(6)(A)(i) of the INA, in that she entered at a place not designated by the Attorney General."},
+ {"id": "E5_missing_date", "facts": {},
+  "narrative": "Agents encountered Mr. Daniel Reyes, a citizen of Honduras, near the Eagle Pass port of entry. He stated he waded across the Rio Grande without inspection and had no documents. No prior immigration history was found. He is inadmissible under INA 212(a)(6)(A)(i), as he entered without inspection."},
+ {"id": "E6_missing_place", "facts": {},
+  "narrative": "On January 5, 2026, agents arrested 'Ibrahim Khan', a citizen of Pakistan. He stated he entered without inspection in 2020. Records checks show no previous immigration history. He had no documents. Khan is inadmissible under section 212(a)(6)(A)(i) of the INA, in that he entered at a place not designated."},
+ {"id": "E7_missing_entry_and_statements", "facts": {},
+  "narrative": "On 02/14/2026, officers encountered 'Grace Mensah', a citizen of Ghana, near the Newark airport. Records checks reveal no prior immigration history. She carried no documents. Subject is inadmissible under section 212(a)(7)(A)(i)(I) of the INA, in that she lacked a valid entry document."},
+ {"id": "E8_citizenship_conflict", "facts": {},
+  "narrative": "On April 2, 2026, agents apprehended 'Mateo Silva' near the Brownsville station. Subject is a citizen of Brazil. Subject stated he is a citizen of Argentina. He crossed without inspection and has no documents. Subject has no prior immigration history. Subject is inadmissible under section 212(a)(6)(A)(i) of the INA, in that he entered without being admitted."},
+ {"id": "E9_entry_conflict_lawful", "facts": {},
+  "narrative": "On May 5, 2026, agents encountered 'Laila Hussein', a national of Iraq, near the San Diego sector. Subject stated she entered the United States illegally between ports of entry. Subject was lawfully admitted as a refugee in 2019. Subject has no previous immigration violations and no documents. Subject is inadmissible under section 212(a)(6)(A)(i) of the INA, in that she entered without inspection."},
+ {"id": "E10_documents_conflict_valid", "facts": {},
+  "narrative": "On June 9, 2026, officers encountered 'Peter Okafor', a citizen of Nigeria, at the Houston airport. Subject stated that he had no documents of any kind. Subject presented a valid passport and visa at primary inspection. Subject has no prior immigration history. Subject is inadmissible under section 212(a)(7)(A)(i)(I) of the INA, in that he lacked a valid entry document."},
+ {"id": "E11_removal_history_conflict", "facts": {},
+  "narrative": "On July 7, 2026, agents apprehended 'Samir Ali', a citizen of Yemen, near the Del Rio station. Subject stated he crossed without inspection. Subject has never been removed or deported. Records indicate that subject was removed from the United States on March 3, 2018. Subject has no documents. Subject is inadmissible under section 212(a)(9)(A) of the INA, in that he was previously removed and entered again."},
+ {"id": "E12_multi_charge_clean", "facts": {},
+  "narrative": "On August 4, 2026, agents apprehended 'Jorge Lima', a citizen of Mexico, near the Sasabe station. Subject stated he crossed without inspection at a place not designated and has no documents. Records confirm he was previously removed from the United States in 2017. Subject is inadmissible under section 212(a)(6)(A)(i) of the INA, in that he entered at a place not designated. Subject is also inadmissible under section 212(a)(9)(A) of the INA, in that he was previously removed and entered again."},
+ {"id": "E13_incomplete_citation", "facts": {},
+  "narrative": "On September 3, 2026, officers encountered 'Alma Ruiz', a citizen of Cuba, at the Tampa airport. Subject stated she overstayed her admission as a visitor. Subject presented her passport and visa. Subject has a prior visa history with no violations. Subject is removable under Section 237 of the INA."},
+ {"id": "E14_clean_allcaps_8usc", "facts": {},
+  "narrative": "On 08/02/2026 Border Patrol agents located ROSA LOPEZ-DIAZ, a citizen of Mexico, near the Santa Teresa station. Subject stated she crossed on foot without inspection and has no documents. Subject has no prior immigration history. Subject is inadmissible under 8 U.S.C. 1182(a)(6)(A)(i), in that she entered at a place not designated by the Attorney General."},
+ {"id": "E15_clean_ordinal_date", "facts": {},
+  "narrative": "On the 14th of March, 2026, agents apprehended 'Tomas Vega', a citizen of Chile, near the Naco station. Subject told agents he crossed without inspection and has no papers. Subject has no previous immigration history. Subject is inadmissible under section 212(a)(6)(A)(i) of the INA, in that he entered at a place not designated by the Attorney General."},
+ {"id": "E16_missing_name_and_documents", "facts": {},
+  "narrative": "On October 14, 2026, agents apprehended a female subject, a citizen of Venezuela, near the Falfurrias checkpoint. Subject stated she entered without inspection. Records show no prior immigration history. Subject is inadmissible under section 212(a)(6)(A)(i) of the INA, in that she entered at a place not designated by the Attorney General."},
+ {"id": "E17_missing_history", "facts": {},
+  "narrative": "On 10/20/2026, agents apprehended 'Tariq Aziz', a citizen of Jordan, near the Ajo station. Subject stated he crossed without inspection and has no documents. Subject is inadmissible under section 212(a)(6)(A)(i) of the INA, in that he entered at a place not designated by the Attorney General."},
+ {"id": "E18_fraud_no_document", "facts": {},
+  "narrative": "On 11/01/2026, officers encountered 'Nina Petrova', a citizen of Russia, at the Atlanta airport. Subject stated she arrived on a flight and was admitted as a visitor. Subject has no prior immigration history. Subject is inadmissible under section 212(a)(6)(C)(i) of the INA, in that she willfully misrepresented a material fact."},
+ {"id": "E19_no_citation", "facts": {},
+  "narrative": "On 11/09/2026, agents apprehended 'Diego Salas', a citizen of Peru, near the Yuma station. Subject stated he crossed the river without inspection. Subject has no prior immigration history and no documents."},
+ {"id": "E20_clean_i94_overstay", "facts": {},
+  "narrative": "On December 3, 2026, ICE officers encountered Subject Ahmed Khalil, a citizen of Lebanon, near the Dallas field office. Mr. Khalil told officers he was admitted as an F-1 student and stopped attending classes. He presented his passport and Form I-94. Records indicate no prior removals. He is removable under section 237(a)(1)(B) of the INA, in that he was admitted and remained in violation of his status."},
+ {"id": "E21_clean_expedited", "facts": {},
+  "narrative": "On 06/18/2026 at the San Ysidro port of entry, CBP officers encountered 'Ahmed Nasser', an arriving alien and citizen of Jordan. Subject stated he sought admission with a visitor visa but intended to work. Subject presented his passport. Records indicate no previous immigration history. Subject is subject to expedited removal under section 235(b)(1) of the INA."},
+ {"id": "E22_clean_multiline", "facts": {},
+  "narrative": "ENCOUNTER: On 01/22/2026, Border Patrol agents apprehended 'Luis Ortega', a citizen of Mexico, near the Tecate station.\nSTATEMENT: Subject stated he crossed on foot without inspection and has no documents.\nHISTORY: Records checks show no prior immigration history.\nCHARGE: Subject is inadmissible under section 212(a)(6)(A)(i) of the INA, in that he entered at a place not designated by the Attorney General."},
+]
+
+EXTRA_KEY = {
+ "E1_clean_unquoted_name": {"planted": [], "human": False},
+ "E2_clean_residence_arrest": {"planted": [], "human": False},
+ "E3_clean_altered_passport": {"planted": [], "human": False},
+ "E4_missing_citizenship": {"planted": [("missing", "country_of_citizenship")], "human": False},
+ "E5_missing_date": {"planted": [("missing", "date_of_encounter")], "human": False},
+ "E6_missing_place": {"planted": [("missing", "place_of_encounter")], "human": False},
+ "E7_missing_entry_and_statements": {"planted": [("missing", "manner_of_entry"), ("missing", "subject_statements")], "human": False},
+ "E8_citizenship_conflict": {"planted": [("inconsistent", "country_of_citizenship")], "human": True},
+ "E9_entry_conflict_lawful": {"planted": [("inconsistent", "manner_of_entry"), ("citation_mismatch", "charge_citation")], "human": True},
+ "E10_documents_conflict_valid": {"planted": [("inconsistent", "documents")], "human": False},
+ "E11_removal_history_conflict": {"planted": [("inconsistent", "immigration_history"), ("citation_mismatch", "charge_citation")], "human": False},
+ "E12_multi_charge_clean": {"planted": [], "human": True},
+ "E13_incomplete_citation": {"planted": [("unclear", "charge_citation")], "human": True},
+ "E14_clean_allcaps_8usc": {"planted": [], "human": False},
+ "E15_clean_ordinal_date": {"planted": [], "human": False},
+ "E16_missing_name_and_documents": {"planted": [("missing", "subject_name"), ("missing", "documents")], "human": False},
+ "E17_missing_history": {"planted": [("missing", "immigration_history")], "human": False},
+ "E18_fraud_no_document": {"planted": [("missing", "documents"), ("citation_mismatch", "charge_citation")], "human": False},
+ "E19_no_citation": {"planted": [("citation_mismatch", "charge_citation")], "human": True},
+ "E20_clean_i94_overstay": {"planted": [], "human": False},
+ "E21_clean_expedited": {"planted": [], "human": False},
+ "E22_clean_multiline": {"planted": [], "human": False},
+}
+
+ALL_SAMPLES = SAMPLES + EXTRA_SAMPLES
+ALL_KEY = {**KEY, **EXTRA_KEY}
+
+if __name__ == "__main__":
+    # Same grading as the website's Scorecard. Run: python samples.py
+    import eval_rules
+    eval_rules.run(SAMPLES, KEY, "Practice set (20)")
+    eval_rules.run(EXTRA_SAMPLES, EXTRA_KEY, "Held-out set (22)")
